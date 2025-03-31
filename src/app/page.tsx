@@ -15,10 +15,15 @@ export default function Home() {
   const [description, setDescription] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  useEffect(() => {
+
+  function fetchTasks(){
     fetch("/api/tasks")
       .then((res) => res.json())
       .then((data) => setTasks(data));
+  }
+
+  useEffect(() => {
+    fetchTasks();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -39,6 +44,28 @@ export default function Home() {
       setTitle("");
       setDescription("");
       setIsModalOpen(false);
+    }
+  };
+
+  const toggleComplete = async (id: string, completed: boolean) => {
+    const response = await fetch(`/api/tasks/?id=${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ completed }),
+    });
+
+    if (response.ok) {
+      const updatedTask = await response.json();
+      setTasks((prev) =>
+      prev.map((task) => (task.id === id ? { ...updatedTask } : task)));
+    };
+  }
+
+  const deleteTask = async (id: string) => {
+    const response = await fetch(`/api/tasks/?id=${id}`, { method: "DELETE" });
+
+    if (response.ok) {
+      fetchTasks();
     }
   };
 
@@ -66,10 +93,30 @@ export default function Home() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
               transition={{ duration: 0.3 }}
-              className="p-5 rounded-lg bg-gray-800 shadow-md"
+              className={`p-5 rounded-lg shadow-md flex justify-between items-center ${
+                task.completed ? "opacity-50 line-through bg-green-600" : "bg-gray-800"
+              }`}
             >
-              <h2 className="text-xl font-semibold">{task.title}</h2>
-              <p className="text-gray-300">{task.description}</p>
+              <div>
+                <h2 className="text-xl font-semibold">{task.title}</h2>
+                <p className="text-gray-300">{task.description}</p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => toggleComplete(task.id, !task.completed)}
+                  className={`px-3 py-1 rounded text-white ${
+                    task.completed ? "bg-gray-500" : "bg-green-600 hover:bg-green-500"
+                  }`}
+                >
+                  {task.completed ? "Undo" : "Done"}
+                </button>
+                <button
+                  onClick={() => deleteTask(task.id)}
+                  className="px-3 py-1 bg-red-600 hover:bg-red-500 rounded text-white"
+                >
+                  Delete
+                </button>
+              </div>
             </motion.li>
           ))}
         </AnimatePresence>
