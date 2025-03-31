@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -23,18 +23,33 @@ export async function POST(req: Request) {
 }
 
 // UPDATE task
-export async function PUT(req: Request, { params }: {params: { id: string} }) {
+export async function PUT(req: NextRequest) {
   try {
-    const { id } = params;
+    const id = req?.nextUrl?.searchParams?.get("id");
+    console.log(id);
+    // const { id } = params;
     const { title, description, completed } = await req.json();
 
-    const updatedTask = await prisma.task.update({
-      where: { id },
-      data: { title, description, completed },
-    })
+    // const updatedTask = await prisma.task.update({
+    //   where: { id },
+    //   data: { title, description, completed },
+    // })
 
-    return NextResponse.json(updatedTask);
+    // return NextResponse.json(updatedTask);
   }catch (error) {
-    return NextResponse.json({ error: "Failed to update task"}, { status: 500});
+    return NextResponse.json({ error: "Failed to update task " + error}, { status: 500});
+  }
+}
+
+// DELETE task
+export async function DELETE(req: Request, { params } : { params : { id : string } }) {
+  try {
+    const { id } = params;
+
+    await prisma.task.delete({ where: { id } });
+
+    return NextResponse.json({message: "Task deleted successfully"});
+  }catch (error) {
+    return NextResponse.json({ error: "Failed to delete task" }, { status : 500 });
   }
 }
