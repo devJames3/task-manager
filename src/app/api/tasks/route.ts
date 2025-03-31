@@ -18,38 +18,41 @@ export async function POST(req: Request) {
     });
     return NextResponse.json(newTask, { status: 201});
   }catch (error) {
-    return NextResponse.json({error: "Failed to create task"}, {status: 500});
+    return NextResponse.json({error: "Failed to create task " + error}, {status: 500});
   }
 }
 
 // UPDATE task
 export async function PUT(req: NextRequest) {
   try {
-    const id = req?.nextUrl?.searchParams?.get("id");
-    console.log(id);
-    // const { id } = params;
+    const idParam : unknown = req?.nextUrl?.searchParams?.get("id");
+
+    const id = idParam as string;
+    
     const { title, description, completed } = await req.json();
 
-    // const updatedTask = await prisma.task.update({
-    //   where: { id },
-    //   data: { title, description, completed },
-    // })
+    const updatedTask = await prisma.task.update({
+      where: { id },
+      data: { title, description, completed },
+    })
 
-    // return NextResponse.json(updatedTask);
+    return NextResponse.json(updatedTask);
   }catch (error) {
     return NextResponse.json({ error: "Failed to update task " + error}, { status: 500});
   }
 }
 
 // DELETE task
-export async function DELETE(req: Request, { params } : { params : { id : string } }) {
+export async function DELETE(req: NextRequest) {
   try {
-    const { id } = params;
+    const idParam : unknown = req?.nextUrl?.searchParams?.get("id");
+
+    const id = idParam as string;
 
     await prisma.task.delete({ where: { id } });
 
     return NextResponse.json({message: "Task deleted successfully"});
   }catch (error) {
-    return NextResponse.json({ error: "Failed to delete task" }, { status : 500 });
+    return NextResponse.json({ error: "Failed to delete task " + error }, { status : 500 });
   }
 }
