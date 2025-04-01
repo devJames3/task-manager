@@ -14,7 +14,6 @@ interface Task {
 }
 
 const TaskCard: React.FC<Task> = ({
-  key,
   id,
   title,
   description,
@@ -27,7 +26,7 @@ const TaskCard: React.FC<Task> = ({
 }) => {
   return (
     <motion.li
-      key={key}
+      // key={id}
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 20 }}
