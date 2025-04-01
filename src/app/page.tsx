@@ -1,6 +1,13 @@
 "use client";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+import TaskCard from "@/components/TaskCard";
+import TaskModal from "@/components/TaskModal";
+
+
 
 interface Task {
   id: string;
@@ -14,71 +21,156 @@ export default function Home() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editTaskId, setEditTaskId] = useState<string | null>(null);
+  const [expandedTask, setExpandedTask] = useState<string | null>(null);
 
-
-  function fetchTasks(){
+  function fetchTasks() {
     fetch("/api/tasks")
       .then((res) => res.json())
-      .then((data) => setTasks(data));
+      .then((data) => setTasks(data))
+      .catch((error) => {
+        console.error(error)
+        toast.error("Something went wrong");
+      })
   }
 
   useEffect(() => {
     fetchTasks();
   }, []);
 
+  // Create or Update Task
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !description.trim()) return;
 
-    const newTask = { title, description, completed: false };
+    if (editTaskId) {
+      try{
+        const response = await fetch(`/api/tasks/?id=${editTaskId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title, description }),
+        });
 
-    const response = await fetch("/api/tasks", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newTask),
-    });
+        const data = await response.json();
+        
 
-    if (response.ok) {
-      const createdTask = await response.json();
-      setTasks([...tasks, createdTask]);
-      setTitle("");
-      setDescription("");
-      setIsModalOpen(false);
+        if (response.ok) {
+          toast.success("Task updated successfully!");
+          fetchTasks();
+          resetForm();
+        }else{
+          toast.error(data.error || "Something went wrong");
+        }
+      }catch(error) {
+        console.error(error)
+        toast.error("An unexpected error occurred");
+      }
+      
+    } else {
+      
+      try{
+        const newTask = { title, description, completed: false };
+
+        const response = await fetch("/api/tasks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newTask),
+        });
+
+        const data = await response.json();
+
+
+        if (response.ok) {
+          toast.success("Task created successfully!");
+          fetchTasks();
+          resetForm();
+        }else{
+          toast.error(data.error || "Something went wrong");
+        }
+
+      }catch (error){
+        console.error(error)
+        toast.error("An unexpected error occurred");
+      }
+      
     }
   };
 
-  const toggleComplete = async (id: string, completed: boolean) => {
-    const response = await fetch(`/api/tasks/?id=${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ completed }),
-    });
+  const toggleComplete = async (id: string, completed: boolean, title: string) => {
+    try{
+      const response = await fetch(`/api/tasks/?id=${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ completed, title }),
+      });
 
-    if (response.ok) {
-      const updatedTask = await response.json();
-      setTasks((prev) =>
-      prev.map((task) => (task.id === id ? { ...updatedTask } : task)));
-    };
-  }
+      if (response.ok) {
+        fetchTasks();
+      }else{
+        toast.error("Failed to update task status");
+      }
+
+    }catch (error) {
+      toast.error("An error occurred while updating task status");
+      console.error(error)
+    } 
+  };
 
   const deleteTask = async (id: string) => {
-    const response = await fetch(`/api/tasks/?id=${id}`, { method: "DELETE" });
+    try{
+      const response = await fetch(`/api/tasks/?id=${id}`, { method: "DELETE" });
 
-    if (response.ok) {
-      fetchTasks();
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success(data.message || "success");
+        fetchTasks();
+      }else{
+        toast.error(data.error || "Something went wrong");
+      }
+    }catch(error){
+      toast.error("An error occurred while deleting task");
+      console.error(error)
     }
+    
+  };
+
+
+  const handleEdit = (task: Task) => {
+    setEditTaskId(task.id);
+    setTitle(task.title);
+    setDescription(task.description);
+    setIsModalOpen(true);
+  };
+
+  // Reset Form
+  const resetForm = () => {
+    setEditTaskId(null);
+    setTitle("");
+    setDescription("");
+    setIsModalOpen(false);
   };
 
   return (
-    <div className="container mx-auto p-6 min-h-screen bg-gray-900 text-white">
-      <h1 className="text-3xl font-bold mb-6 text-center">Task Manager</h1>
+    <div className="container mx-auto p-6 min-h-screen bg-gray-900 text-white max-w-[850px]">
+      <ToastContainer 
+        position="top-right"
+        autoClose={5000}      
+        hideProgressBar={false}    
+        newestOnTop={false}        
+        closeOnClick={true}       
+        rtl={false}               
+        pauseOnFocusLoss={false}    
+        draggable={true}            
+        pauseOnHover={true}
+      />
+      <h1 className="text-3xl font-bold mb-6 text-center">Saral Task Manager</h1>
 
       {/* Add Task Button */}
       <motion.button
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsModalOpen(true)}
-        className="mb-6 px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded text-white"
+        className="md:sticky md:mb-6 fixed bottom-6 right-6 px-6 py-3 bg-blue-600 hover:bg-blue-500 rounded-full text-white shadow-lg md:rounded md:px-4 md:py-2"
       >
         + Add Task
       </motion.button>
@@ -87,91 +179,15 @@ export default function Home() {
       <ul className="space-y-4">
         <AnimatePresence>
           {tasks.map((task) => (
-            <motion.li
-              key={task.id}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              transition={{ duration: 0.3 }}
-              className={`p-5 rounded-lg shadow-md flex justify-between items-center ${
-                task.completed ? "opacity-50 line-through bg-green-600" : "bg-gray-800"
-              }`}
-            >
-              <div>
-                <h2 className="text-xl font-semibold">{task.title}</h2>
-                <p className="text-gray-300">{task.description}</p>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => toggleComplete(task.id, !task.completed)}
-                  className={`px-3 py-1 rounded text-white ${
-                    task.completed ? "bg-gray-500" : "bg-green-600 hover:bg-green-500"
-                  }`}
-                >
-                  {task.completed ? "Undo" : "Done"}
-                </button>
-                <button
-                  onClick={() => deleteTask(task.id)}
-                  className="px-3 py-1 bg-red-600 hover:bg-red-500 rounded text-white"
-                >
-                  Delete
-                </button>
-              </div>
-            </motion.li>
+            <TaskCard key={task.id} id={task.id} title={task.title} description={task.description} completed={task.completed} toggleComplete={toggleComplete} handleEdit={handleEdit} deleteTask={deleteTask} expandedTask={expandedTask} setExpandedTask={setExpandedTask}/>
           ))}
         </AnimatePresence>
       </ul>
 
-      {/* Modal for Adding Task */}
+      {/* Modal for Adding/Editing Task */}
       <AnimatePresence>
-        {isModalOpen && (
-          <motion.div
-            key="modal"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            transition={{ duration: 0.3 }}
-            className="fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-md"
-          >
-            <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-96">
-              <h2 className="text-xl font-bold mb-4">Add New Task</h2>
-              <form onSubmit={handleSubmit}>
-                <input
-                  type="text"
-                  placeholder="Task Title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="w-full p-2 mb-3 bg-gray-700 text-white border border-gray-600 rounded"
-                />
-                <textarea
-                  placeholder="Task Description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="w-full p-2 mb-3 bg-gray-700 text-white border border-gray-600 rounded"
-                ></textarea>
-                <div className="flex justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsModalOpen(false)}
-                    className="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded text-white"
-                  >
-                    Cancel
-                  </button>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    type="submit"
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded text-white"
-                  >
-                    Save Task
-                  </motion.button>
-                </div>
-              </form>
-            </div>
-          </motion.div>
-        )}
+        <TaskModal isModalOpen={isModalOpen} resetForm={resetForm} handleSubmit={handleSubmit} title={title} setTitle={setTitle} description={description} setDescription={setDescription} editTaskId={editTaskId} />
       </AnimatePresence>
-
     </div>
   );
 }

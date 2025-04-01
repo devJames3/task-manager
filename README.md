@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Task Manager App
 
-## Getting Started
+A simple task manager app that allows users to **Create**, **Read**, **Update**, and **Delete** tasks. Built with **Next.js** for the frontend and **Prisma** for database management, this app provides a clean, responsive interface that works on both desktop and mobile devices.
 
-First, run the development server:
+## Features
+
+- **Create**: Add new tasks with a title and description.
+- **Read**: View a list of all tasks and their details.
+- **Update**: Edit an existing task.
+- **Delete**: Remove a task from the list.
+- **Input Validation**: Ensures all fields are filled before submitting.
+
+## Technologies Used
+
+- **Next.js**: Frontend framework
+- **Prisma**: Database ORM
+- **Tailwind CSS**: Styling framework
+- **Framer Motion**: Animations
+- **API Routes**: For backend logic (CRUD operations)
+
+## Installation Guide
+
+To run this project locally, follow these steps:
+
+### 1. Clone the repository:
+
+```bash
+git clone https://github.com/devJames3/task-manager.git
+```
+
+### 2. Install dependencies:
+
+Navigate to the project folder and install the necessary packages:
+
+```bash
+cd task-manager-app
+npm install
+```
+
+### 3. Set up environment variables:
+
+Create a `.env` file in the root directory of the project and add the necessary environment variables for the database connection. Example for Sqlite:
+
+```bash
+DATABASE_URL="file:./database_name.db"
+```
+
+### 4. Set up the database:
+
+If you don’t have a database set up, you'll need to create one and apply the migrations.
+
+#### Steps for setting up the database:
+
+- Install PostgreSQL (or another relational database, depending on your choice).
+
+- We used `Sqlite` for development but you can create a new database if you haven't already, using your preferred database client (e.g., psql, pgAdmin, or any other tool). But
+
+- Run Prisma migrations to set up the database schema. This will apply the models defined in your Prisma schema (schema.prisma) to the database.
+
+Run the following command to apply the migrations:
+
+```bash
+npx prisma migrate dev
+```
+
+Generate the database tables based on the models in your Prisma schema.
+
+Create a .env file (if it doesn’t exist) with the correct database URL.
+
+### 5. Run the app:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
