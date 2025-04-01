@@ -14,9 +14,9 @@ export default function Home() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editTaskId, setEditTaskId] = useState<string | null>(null); // Track if editing
 
-
-  function fetchTasks(){
+  function fetchTasks() {
     fetch("/api/tasks")
       .then((res) => res.json())
       .then((data) => setTasks(data));
@@ -26,24 +26,37 @@ export default function Home() {
     fetchTasks();
   }, []);
 
+  // Create or Update Task
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !description.trim()) return;
 
-    const newTask = { title, description, completed: false };
+    if (editTaskId) {
+      // Editing Existing Task
+      const response = await fetch(`/api/tasks/?id=${editTaskId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, description }),
+      });
 
-    const response = await fetch("/api/tasks", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newTask),
-    });
+      if (response.ok) {
+        fetchTasks();
+        resetForm();
+      }
+    } else {
+      // Adding New Task
+      const newTask = { title, description, completed: false };
 
-    if (response.ok) {
-      const createdTask = await response.json();
-      setTasks([...tasks, createdTask]);
-      setTitle("");
-      setDescription("");
-      setIsModalOpen(false);
+      const response = await fetch("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newTask),
+      });
+
+      if (response.ok) {
+        fetchTasks();
+        resetForm();
+      }
     }
   };
 
@@ -55,11 +68,9 @@ export default function Home() {
     });
 
     if (response.ok) {
-      const updatedTask = await response.json();
-      setTasks((prev) =>
-      prev.map((task) => (task.id === id ? { ...updatedTask } : task)));
-    };
-  }
+      fetchTasks();
+    }
+  };
 
   const deleteTask = async (id: string) => {
     const response = await fetch(`/api/tasks/?id=${id}`, { method: "DELETE" });
@@ -67,6 +78,22 @@ export default function Home() {
     if (response.ok) {
       fetchTasks();
     }
+  };
+
+  // Open Edit Modal
+  const handleEdit = (task: Task) => {
+    setEditTaskId(task.id);
+    setTitle(task.title);
+    setDescription(task.description);
+    setIsModalOpen(true);
+  };
+
+  // Reset Form
+  const resetForm = () => {
+    setEditTaskId(null);
+    setTitle("");
+    setDescription("");
+    setIsModalOpen(false);
   };
 
   return (
@@ -78,7 +105,8 @@ export default function Home() {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsModalOpen(true)}
-        className="mb-6 px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded text-white"
+        className="md:relative md:mb-6 fixed bottom-6 right-6 px-6 py-3 bg-blue-600 hover:bg-blue-500 rounded text-white shadow-lg md:rounded md:px-4 md:py-2"
+        // className="mb-6 px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded text-white"
       >
         + Add Task
       </motion.button>
@@ -111,6 +139,12 @@ export default function Home() {
                   {task.completed ? "Undo" : "Done"}
                 </button>
                 <button
+                  onClick={() => handleEdit(task)}
+                  className="px-3 py-1 bg-yellow-600 hover:bg-yellow-500 rounded text-white"
+                >
+                  Edit
+                </button>
+                <button
                   onClick={() => deleteTask(task.id)}
                   className="px-3 py-1 bg-red-600 hover:bg-red-500 rounded text-white"
                 >
@@ -122,7 +156,7 @@ export default function Home() {
         </AnimatePresence>
       </ul>
 
-      {/* Modal for Adding Task */}
+      {/* Modal for Adding/Editing Task */}
       <AnimatePresence>
         {isModalOpen && (
           <motion.div
@@ -134,7 +168,9 @@ export default function Home() {
             className="fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-md"
           >
             <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-96">
-              <h2 className="text-xl font-bold mb-4">Add New Task</h2>
+              <h2 className="text-xl font-bold mb-4">
+                {editTaskId ? "Edit Task" : "Add New Task"}
+              </h2>
               <form onSubmit={handleSubmit}>
                 <input
                   type="text"
@@ -152,7 +188,7 @@ export default function Home() {
                 <div className="flex justify-end gap-2">
                   <button
                     type="button"
-                    onClick={() => setIsModalOpen(false)}
+                    onClick={resetForm}
                     className="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded text-white"
                   >
                     Cancel
@@ -163,7 +199,7 @@ export default function Home() {
                     type="submit"
                     className="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded text-white"
                   >
-                    Save Task
+                    {editTaskId ? "Update Task" : "Save Task"}
                   </motion.button>
                 </div>
               </form>
@@ -171,7 +207,6 @@ export default function Home() {
           </motion.div>
         )}
       </AnimatePresence>
-
     </div>
   );
 }
