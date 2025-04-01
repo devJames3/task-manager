@@ -1,7 +1,6 @@
 import { motion } from "framer-motion";
 
 interface Task {
-  key: string;
   id: string;
   title: string;
   description: string;
@@ -64,7 +63,7 @@ const TaskCard: React.FC<Task> = ({
         </button>
         <button
           onClick={() => handleEdit({
-            key, id, title, description, completed,
+            id, title, description, completed,
             toggleComplete,
             handleEdit,
             deleteTask,
