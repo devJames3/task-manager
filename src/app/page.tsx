@@ -24,6 +24,7 @@ export default function Home() {
   const [editTaskId, setEditTaskId] = useState<string | null>(null);
   const [expandedTask, setExpandedTask] = useState<string | null>(null);
 
+ 
   function fetchTasks() {
     fetch("/api/tasks")
       .then((res) => res.json())
@@ -135,6 +136,7 @@ export default function Home() {
   };
 
 
+  // Open Edit Modal
   const handleEdit = (task: Task) => {
     setEditTaskId(task.id);
     setTitle(task.title);
